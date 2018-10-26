@@ -1,0 +1,41 @@
+Phase: DegreeFinder
+Input: Token Identifier Degree SpaceToken
+Options: control = appelt debug = false
+
+Rule: DegreeRule1
+Priority: 100
+(
+  {Identifier.majorType == degree}
+  ({Token.category == PU})?
+  ({SpaceToken})[0,2]
+  (
+    {Degree}
+  ):degreeLookup
+):section
+-->
+:degreeLookup.DEGREE = {conf = strong},
+:section.Section = {kind = degree}
+
+Rule: DegreeRule2
+Priority: 50
+{SpaceToken}
+(
+	{Degree}
+)
+:degreeLookup
+{SpaceToken}
+-->
+:degreeLookup.DEGREE = {conf = normal},
+:degreeLookup.Section = {kind = degree}
+
+Rule: DegreeRule3
+Priority: 20
+{SpaceToken}
+(
+	{Degree}
+)
+:degreeLookup
+{SpaceToken}
+-->
+:degreeLookup.DEGREE = {conf = weak},
+:degreeLookup.Section = {kind = degree}

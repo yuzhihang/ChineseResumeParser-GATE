@@ -1,0 +1,15 @@
+Phase: ApplyPositionFinder
+Input: Token Identifier SpaceToken Sentence
+Options: control = appelt debug = false
+
+Rule:StrongApplyPositionRule
+Priority:100
+(
+  {Identifier.majorType == apply_position}
+  (({Token.category !~ "(NN|NR|NT)"})[0, 2])
+  ({SpaceToken})[0,2]
+  ({Sentence}):applypositionLookup
+):section
+-->
+:applypositionLookup.APPLY_POSITION = {rule = strong},
+:section.Section = {kind = apply_position}

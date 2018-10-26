@@ -1,0 +1,310 @@
+/*
+*  time.jape
+*
+* Copyright (c) 1998-2004, The University of Sheffield.
+*
+*  This file is part of GATE (see http://gate.ac.uk/), and is free
+*  software, licenced under the GNU Library General Public License,
+*  Version 2, June 1991 (in the distribution as file licence.html,
+*  and also available at http://gate.ac.uk/gate/licence.html).
+*
+*  Diana Maynard, 10 Sep 2001
+* 
+*  $Id: date.jape 17311 2014-02-14 18:49:50Z dgmaynard $
+*/
+
+
+Phase:  Time
+Input: Token Lookup
+Options: control = appelt
+
+
+/////////////////////////////////////////////////
+
+Macro: DAY_NAME 
+({Lookup.minorType == day })
+
+Macro: ONE_DIGIT
+({Token.kind == number, Token.length == "1"})
+
+Macro: TWO_DIGIT
+({Token.kind == number, Token.length == "2"})
+
+Macro: FOUR_DIGIT
+({Token.kind == number, Token.length == "4", Token.string =~ "^(19|20)"})
+
+Macro: DAY_MONTH_NUM
+(ONE_DIGIT | TWO_DIGIT)
+
+Macro: DAY 
+((DAY_NAME) |
+ DAY_MONTH_NUM)
+
+Macro: MONTH_NAME
+({Lookup.minorType == month})
+
+Macro: MONTH 
+(MONTH_NAME | DAY_MONTH_NUM)
+
+Macro: SLASH
+  ({Token.string == "/"})[1,2]
+  
+Macro: DASH
+  ({Token.string == "-"})[1,2]
+
+Macro: DOT
+  ({Token.string == "."})[1,2]
+
+Macro: YEAR
+(        
+ {Lookup.majorType == year}|
+ TWO_DIGIT | FOUR_DIGIT | 
+ {Token.string == "'"}
+ (TWO_DIGIT)
+)
+
+Macro: ORDINAL
+(
+   ({Token.string ==~ "[0-9][0-9]?(th|rd|nd|st)"}
+    |
+   {Lookup.minorType == ordinal})
+   (
+    {Token.string == "of"})?
+)
+
+Macro: NUM_OR_ORDINAL
+  (ORDINAL | DAY_MONTH_NUM)
+
+
+Macro: COMMA
+({Token.string == ","})
+
+//////////////////////////////////////////////////////////////////
+
+// Date Rules
+
+//Rule: IgnoreDatePerson
+//Priority: 500
+//(
+// {Date}
+// {Person}
+//)
+//:date
+//-->
+//{}
+
+
+
+Rule: DateSlash           // UK only
+// Wed, 10/July/00
+// 10/July
+// July/99
+
+(
+ ((DAY_NAME (COMMA)? )?
+ NUM_OR_ORDINAL SLASH MONTH_NAME (SLASH YEAR)? )|
+ (MONTH_NAME SLASH YEAR) 
+)
+:date
+-->
+ :date.TempDate = {rule = "DateSlash"}
+
+Rule: DateDash
+// Wed 10-July-00
+// 10-July 00
+// 10-July
+
+(  
+ ((DAY_NAME (COMMA)?)?
+  (NUM_OR_ORDINAL DASH MONTH_NAME (DASH)? YEAR)) |
+
+ ((DAY_NAME (COMMA)?)?
+  NUM_OR_ORDINAL DASH MONTH_NAME)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateDash"}
+
+
+Rule:   DateName
+Priority: 20
+// Wed 10 July
+// Wed 10 July, 2000
+// Sun, 21 May 2000
+// 10th of July, 2000
+// 10 July
+// 10th of July
+// July, 2000
+
+(
+ (DAY_NAME NUM_OR_ORDINAL MONTH_NAME)|
+
+ (DAY_NAME (COMMA)? 
+  NUM_OR_ORDINAL MONTH_NAME ((COMMA)? YEAR)?) 
+|
+
+ ((DAY_NAME (COMMA)? )?
+ NUM_OR_ORDINAL MONTH_NAME 
+ ((COMMA)? YEAR)?)
+|
+
+ (NUM_OR_ORDINAL MONTH_NAME) 
+| 
+(MONTH_NAME (COMMA)? YEAR)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateName"}
+
+Rule: DateNameSpan1
+// 5-20 Jan
+
+(
+ NUM_OR_ORDINAL
+ DASH
+ (NUM_OR_ORDINAL MONTH_NAME ((COMMA)?  YEAR)?)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNameSpan1"}
+
+Rule: DateNameSpan2
+// Jan 5-20
+
+(MONTH_NAME
+
+ NUM_OR_ORDINAL 
+ DASH
+ (NUM_OR_ORDINAL ((COMMA)?  YEAR)?)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNameSpan2"}
+
+Rule: DateNameRev
+// Wed. July 1st, 2000
+// Wed, July 1, 2000
+// Wed, July 1st, 2000
+(         
+ ((DAY_NAME (COMMA)? )?
+  MONTH_NAME  
+  ({Token.string == "the"})?
+ NUM_OR_ORDINAL 
+ ((COMMA)? YEAR)?) |
+         
+ (MONTH_NAME (COMMA)? YEAR)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNameRev"}
+
+Rule: DateNumDash
+// 01-07-00
+// Note: not 07-00
+  
+(
+ (DAY_MONTH_NUM DASH DAY_MONTH_NUM DASH YEAR)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNumDash"}
+
+Rule: DateNumDashRev
+// 00-07-01
+// 2000-07
+
+(
+ (YEAR DASH DAY_MONTH_NUM DASH DAY_MONTH_NUM)|
+ (FOUR_DIGIT DASH DAY_MONTH_NUM)
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNumDashRev"}
+
+Rule: DateNumSlashDot
+// 01/07/00
+// Note: not 07/00
+
+( 
+DAY_MONTH_NUM (SLASH|DOT) DAY_MONTH_NUM (SLASH|DOT) YEAR
+)
+:date
+-->
+ :date.TempDate = {rule = "DateNumSlashDot"}
+
+Rule: YearSpan2
+// 1980/81
+
+(
+ (FOUR_DIGIT)
+ (SLASH|DASH|DOT)
+ (FOUR_DIGIT|TWO_DIGIT | ONE_DIGIT)
+)
+:date -->
+ :date.TempDate = {rule = "YearSpan2"}
+
+Rule: YearSpan3
+Priority: 80
+
+// from 1980 to 1981
+// between 1980 and 1981
+(
+ (({Token.string == "from"}| {Token.string == "From"})
+  (FOUR_DIGIT)
+  {Token.string == "to"}
+  (FOUR_DIGIT)
+ ) |
+  (({Token.string == "between"}|{Token.string == "Between"}) 
+  (FOUR_DIGIT)
+  {Token.string == "and"}
+  (FOUR_DIGIT)
+ )
+)
+:date -->
+ :date.TempDate = {rule = "YearSpan3"}
+
+Rule: YearContext1
+Priority: 40
+({Token.string == "in"}|
+ {Token.string == "by"}
+)
+(YEAR)
+:date -->
+ :date.TempDate = {rule = "YearContext1"}
+
+// Currently, temp1, temp2 and temp3 look good; temp4 is not to be counted
+// but this may change according to the text
+// only positives will be used in final grammar, not negatives
+
+Rule: YearTemp1
+Priority: 30
+// (1987)
+
+({Token.position == startpunct})
+(FOUR_DIGIT)
+:date
+({Token.position == endpunct})
+ -->
+ :date.TempYear = {kind = "positive", rule = "TempYear1"}
+
+Rule: TempYear3
+Priority: 10
+// 1922
+
+(FOUR_DIGIT)
+:date -->
+ :date.TempYear = {kind = "negative", rule = "TempYear3"}
+
+
+Rule: YearWords
+// nineteen twenty three
+// nineteen ten
+
+(
+ {Token.string == "nineteen"}
+ ({Lookup.majorType == number}
+ )?
+ {Lookup.majorType == number}
+)
+:date -->
+ :date.TempYear = {kind = "positive", rule = "YearWords"}

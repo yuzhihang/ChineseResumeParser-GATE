@@ -1,0 +1,26 @@
+Phase: Political_StatusFinder
+Input: Token Identifier Political_Status SpaceToken
+Options: control = appelt debug = false
+
+Rule:StrongPolitical_StatusRule
+Priority:100
+(
+  {Identifier.majorType == "political_status"}
+  ({!Token.category !~ "(NN|NR|NT)"})[0, 2]
+  ({SpaceToken})[0,2]
+  ({Political_Status}):political_statusLookup
+):section
+-->
+:political_statusLookup.POLITICAL_STATUS = {rule = strong},
+:section.Section = {kind = political_status}
+
+Rule:NormalPolitical_statusRule
+Priority:100
+(
+  {SpaceToken}
+  ({Political_Status}):political_statusLookup
+  {SpaceToken}
+):section
+-->
+:political_statusLookup.POLITICAL_STATUS = {rule = normal},
+:section.Section = {kind = Political_status}

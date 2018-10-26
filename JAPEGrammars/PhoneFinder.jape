@@ -1,0 +1,27 @@
+Phase: TelePhoneFinder
+Input: Identifier Token MOBILE Section Address
+Options: control = appelt debug = false
+
+Rule: StrongTelePhoneRuleBefore
+Priority:100
+(
+  {Identifier.majorType == "phone"}
+  ({Token})?
+  (
+   {Address.kind == "telePhone"} | {Token.category =~ "(CD|NT)", Token.string =~ "^((0?86)?\\W?)?(0?\\d{2,3}\\W?)?([2-9]\\d{6,7})$", !MOBILE}
+  ):telePhoneLookup
+):section
+-->
+:telePhoneLookup.PHONE = {kind = TelePhone, conf = strong},
+:section.Section = {kind = telephone}
+
+/*Rule: NormalTelePhoneRule
+Priority:50
+({!Token.string =~ "(QQ|qq|id|ID|Id|)"})
+{Token.category == PU}?
+((
+ {Token.category =~ "(CD|NT)", Token.string =~ "^((0?86)?\\W?)?(0?\\d{2,3}\\W?)?([2-9]\\d{6,7})$", !MOBILE}
+):telePhoneLookup):section
+-->
+:telePhoneLookup.PHONE = {kind = TelePhone, conf = normal},
+:section.Section = {kind = telephone}*/

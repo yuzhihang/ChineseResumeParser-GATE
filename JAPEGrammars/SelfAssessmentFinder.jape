@@ -1,0 +1,15 @@
+Phase: SelfAssessmentFinder
+Input: Token Identifier Sentence Section
+Options: control = appelt debug = false
+
+Rule:StrongRule
+Priority:100
+(
+  {Identifier.majorType == "self_assessment", Sentence}
+  (
+    ({Sentence, !Section, !Identifier.majorType == section_heading})[0, 20]
+  ):saLookup
+):section
+-->
+:saLookup.SELF_ASSESSMENT = {rule = strong},
+:section.Section = {kind = self_assessment}

@@ -1,0 +1,38 @@
+Phase: EmailFinder
+Input: Token Identifier Address SpaceToken
+Options: control = appelt debug = false
+
+Rule: StrongEmailRule
+Priority:100
+{SpaceToken}
+(
+  {Identifier.majorType == email}
+  ({Token.category == PU})?
+  ({SpaceToken})[0,2]
+(
+  ({Token})?
+  ({Address.kind == email} | {Token.string =~ "[^@]++@.*+"})
+):emailLookup
+):section
+{SpaceToken}
+-->
+:emailLookup.EMAIL = { kind = email, conf = strong},
+:section.Section = {kind = email}
+
+Rule: EmailRuleByEnglishTokenizer
+Priority: 80
+{SpaceToken}
+({Address.kind == email}):emailLookup
+{SpaceToken}
+-->
+:emailLookup.EMAIL = {kind = email, conf = etnormal},
+:emailLookup.Section = {kind = email}
+
+/*Rule: EmailRule
+Priority:50
+(
+ {Token.category =~ "(URL|NR)", Token.string =~ "^[_A-Za-z0-9-]++(\\.[_A-Za-z0-9-]++)*+@[A-Za-z0-9]++(\\.[A-Za-z0-9]++)*(\\.[A-Za-z]++)$" }
+)
+:emailLookup
+-->
+:emailLookup.EMAIL = { kind = email, conf = normal}*/

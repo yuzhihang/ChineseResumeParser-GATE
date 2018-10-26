@@ -1,0 +1,19 @@
+Phase: Job_locFinder
+Input: Token Identifier SpaceToken LOC GPE
+Options: control = appelt debug = false
+
+Rule:StrongJob_locRule
+Priority:100
+(
+    {Identifier.majorType == "co_location"}
+	({Token.category !~ "(NN|NR|NT)"})[0, 2]
+	({SpaceToken})[0,2]
+	(
+		({LOC} | {GPE} | {Token.category == PU})[1,5]
+		({SpaceToken}
+		({Token.category == PU}| {LOC} | {GPE}))[0,3]
+	):job_locLookup
+):section
+-->
+:job_locLookup.CAREER_OBJECTIVE_LOCATIONS = {rule = strong},
+:section.Section = {kind = co_loc}

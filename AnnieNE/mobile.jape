@@ -1,0 +1,46 @@
+Phase: MobileFinder
+Input: Lookup Token
+Options: control = appelt debug = false
+
+Rule: StrongMobileRuleBefore
+Priority:100
+{!Token.string =~ "(QQ|qq|id|ID|Id)"}
+{Lookup.minorType == mobile, !Token.string =~ "(QQ|qq|id|ID|Id)"}
+({Token})?
+(
+ {Token.kind == number, Token.length == 11, Token.string =~ "^(13|14|15|17|18)\\d{9}$"}
+):MobileLookup
+-->
+:MobileLookup.Phone = {kind = mobile, conf = strong}
+
+Rule: StrongMobileRuleAfter
+Priority:80
+{!Token.string =~ "(QQ|qq|id|ID|Id)"}
+{!Token.string =~ "(QQ|qq|id|ID|Id)"}
+(
+ {Token.kind == number, Token.length == 11, Token.string =~ "^(13|14|15|17|18)\\d{9}$"}
+):MobileLookup
+({Token})?
+({Lookup.minorType == mobile})
+-->
+:MobileLookup.Phone = {kind = mobile, conf = strong}
+
+Rule: StrongMobileRule86
+Priority:70
+{Token.kind == number, Token.string =~ "0?86"}
+({Token.kind == punctuation})?
+(
+ {Token.kind == number, Token.length == 11, Token.string =~ "^(13|14|15|17|18)\\d{9}$"}
+):MobileLookup
+-->
+:MobileLookup.Phone = {kind = mobile, conf = strong}
+
+Rule: NormalMobileRule
+Priority: 50
+{!Token.string =~ "(QQ|qq|id|ID|Id)"}
+{!Token.string =~ "(QQ|qq|id|ID|Id)"}
+(
+ {Token.kind == number, Token.length == 11, Token.string =~ "^(13|14|15|17|18)\\d{9}$"}
+):MobileLookup
+-->
+:MobileLookup.Phone = {kind = mobile, conf = normal}

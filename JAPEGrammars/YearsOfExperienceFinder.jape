@@ -1,0 +1,70 @@
+Imports: {
+  import java.util.regex.Pattern;
+  import java.util.regex.Matcher;
+}
+
+Phase: YoeFinder
+Input: Sentence Token SpaceToken Identifier
+Options: control = appelt debug = false
+
+Rule:StrongYoeAfterRule
+{SpaceToken}
+(
+  {Identifier.majorType == "years_of_experience"}
+  ({SpaceToken})[0,2]
+  (
+    {Sentence}
+  ):yoeLookup
+  {SpaceToken.kind == control}
+):section
+-->
+{
+  try{
+    Annotation yoeInstance = bindings.get("yoeLookup").iterator().next();
+    AnnotationSet secInstance = bindings.get("section");
+    int start_offset = yoeInstance.getStartNode().getOffset().intValue();
+    int end_offset = yoeInstance.getEndNode().getOffset().intValue();
+
+    String yoe = doc.getContent().toString().substring(start_offset, end_offset);
+    Pattern yoePattern = Pattern.compile("(^[\\d一二三四五六七八九十].*[年|year](以上)?$)| (应届)");
+    Matcher yoeMatcher = yoePattern.matcher(yoe);
+    if(yoeMatcher.find()){
+      FeatureMap yoeFeature = Factory.newFeatureMap();
+      yoeFeature.put("kind", "yoe");
+      yoeFeature.put("rule", "after");
+      outputAS.add(yoeInstance.getStartNode().getOffset(), yoeInstance.getEndNode().getOffset(), "YEARS_OF_EXPERIENCE", yoeFeature);
+      outputAS.add(secInstance.firstNode(), secInstance.lastNode(), "Section", yoeFeature);
+    }
+  }
+  catch(InvalidOffsetException e)
+    {}
+}
+
+Rule:StrongYoeBeforeRule
+{SpaceToken}
+	(
+    (
+      ({Token.category == CD} | {Token.category == NT} | {Token.string == "无"})
+      ({Token.category == M})?
+      ({Token.string == "以上"})?
+      ({Token})[0,2]
+    {Identifier.majorType == "years_of_experience"}
+  ):yoeLookup
+):section
+{SpaceToken}
+-->
+:yoeLookup.YEARS_OF_EXPERIENCE = {rule = before},
+:section.Section = {kind = yoe,rule = before}
+
+Rule:JustGradRule
+{SpaceToken}
+(
+  (
+    {Token.string == "应届"}
+    ({Token.string == "毕业生"})?
+  ):yoeLookup
+):section
+{SpaceToken}
+-->
+:yoeLookup.YEARS_OF_EXPERIENCE = {rule = justgrad},
+:section.Section = {kind = yoe,rule = justgrad}

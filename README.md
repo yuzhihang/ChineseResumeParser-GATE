@@ -1,4 +1,5 @@
 # ResumeParser
+#中文简历信息解析器
 Resume Parser using a hybrid **machine-learning** and **rule-based** approach that focuses on semantic rather than syntactic parsing. This is a console based application
 
 ###System:###
